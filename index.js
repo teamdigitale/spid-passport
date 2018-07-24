@@ -1,9 +1,27 @@
 const passport = require("passport-strategy");
 const util = require("util");
-var xmlCrypto = require("xml-crypto");
-var xmlbuilder = require("xmlbuilder");
+const xmlCrypto = require("xml-crypto");
+const xmlbuilder = require("xmlbuilder");
 const saml = require("passport-saml").SAML;
-var Q = require("q");
+const Q = require("q");
+
+const DOMParser = require("xmldom").DOMParser;
+
+const { createLogger, format, transports } = require("winston");
+const { combine, timestamp, label, printf } = format;
+
+const logger = createLogger({
+  level: process.env.NODE_ENV !== "production" ? "debug" : "info",
+  format: combine(
+    label({ label: "spid-passport" }),
+    timestamp(),
+    format.splat(),
+    printf(info => {
+      return `${info.timestamp} [${info.label}] ${info.level}: ${info.message}`;
+    })
+  ),
+  transports: [new transports.Console()]
+});
 
 function SpidStrategy(options, verify) {
   if (typeof options === "function") {
@@ -30,6 +48,13 @@ util.inherits(SpidStrategy, passport.Strategy);
 SpidStrategy.prototype.authenticate = function(req, options) {
   const self = this;
 
+  const decodedResponse =
+    req.body && req.body.SAMLResponse
+      ? decodeBase64(req.body.SAMLResponse)
+      : undefined;
+
+  logger.debug("Decoded response: %s\n\n", decodedResponse);
+
   const spidOptions = Object.assign({}, this.spidOptions.sp);
 
   const entityID = req.query.entityID;
@@ -47,6 +72,16 @@ SpidStrategy.prototype.authenticate = function(req, options) {
   if (authLevel !== undefined) {
     spidOptions.authnContext = getSpidAuthLevel(authLevel);
     spidOptions.forceAuthn = authLevel === "SpidL1" ? false : true;
+  } else if (decodedResponse) {
+    const xmlResponse = new DOMParser().parseFromString(decodedResponse);
+    const responseAuthLevelEl = xmlResponse.getElementsByTagName(
+      "saml:AuthnContextClassRef"
+    );
+    // <saml2:AuthnContextClassRef>https://www.spid.gov.it/SpidL2</saml2:AuthnContextClassRef>
+    if (responseAuthLevelEl[0]) {
+      spidOptions.authnContext = responseAuthLevelEl[0].textContent.trim();
+    }
+    logger.debug("Response authnContext: %s", spidOptions.authnContext);
   }
 
   const samlClient = new saml(spidOptions);
@@ -380,6 +415,10 @@ const getSpidAuthLevel = function(authLevel) {
       return "https://www.spid.gov.it/SpidL3";
       break;
   }
+};
+
+const decodeBase64 = function(s) {
+  return new Buffer(s, "base64").toString("utf8");
 };
 
 module.exports = SpidStrategy;
