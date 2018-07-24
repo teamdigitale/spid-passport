@@ -1,64 +1,65 @@
-const fs = require('fs')
-const express = require('express')
-const app = express()
-const bodyParser = require('body-parser')
-const passport = require('passport')
-const SpidStrategy = require('../index')
+const fs = require("fs");
+const express = require("express");
+const app = express();
+const bodyParser = require("body-parser");
+const passport = require("passport");
+const SpidStrategy = require("../index");
 
-
-app.use(bodyParser.urlencoded({ extended: false }))
+app.use(bodyParser.urlencoded({ extended: false }));
 
 // parse application/json
-app.use(bodyParser.json())
+app.use(bodyParser.json());
 
 // init passport
-app.use(passport.initialize())
+app.use(passport.initialize());
 
-let spidStrategy = new SpidStrategy({
-  sp: {
-    callbackUrl: "https://example.com/acs",
-    issuer: "https://example.com",
-    privateCert: fs.readFileSync("./certs/key.pem", "utf-8"),
-    decryptionPvk: fs.readFileSync("./certs/key.pem", "utf-8"),
-    attributeConsumingServiceIndex: 1,
-    identifierFormat: "urn:oasis:names:tc:SAML:2.0:nameid-format:transient",
-    authnContext: "https://www.spid.gov.it/SpidL1"
-    attributes: {
-      name: "Required attributes",
-      attributes: ["fiscalNumber", "name", "familyName", "email"]
+let spidStrategy = new SpidStrategy(
+  {
+    sp: {
+      callbackUrl: "https://example.com/acs",
+      issuer: "https://example.com",
+      privateCert: fs.readFileSync("./certs/key.pem", "utf-8"),
+      decryptionPvk: fs.readFileSync("./certs/key.pem", "utf-8"),
+      attributeConsumingServiceIndex: 1,
+      identifierFormat: "urn:oasis:names:tc:SAML:2.0:nameid-format:transient",
+      authnContext: "https://www.spid.gov.it/SpidL1",
+      attributes: {
+        name: "Required attributes",
+        attributes: ["fiscalNumber", "name", "familyName", "email"]
+      },
+      organization: {
+        name: "Organization name",
+        displayName: "Organization display name",
+        URL: "https://example.com"
+      }
     },
-    organization: {
-      name: "Organization name",
-      displayName: "Organization display name",
-      URL: "https://example.com"
+    idp: {
+      test: {
+        entryPoint: "https://spid-testenv-identityserver:9443/samlsso",
+        cert: "MIICNTCCAZ6gAwIBAgIES343gjANBgkqhkiG9w0BAQUFADBVMQswCQYD..."
+      }
     }
   },
-  idp: {
-    test: {
-      entryPoint: "https://spid-testenv-identityserver:9443/samlsso",
-      cert: "MIICNTCCAZ6gAwIBAgIES343gjANBgkqhkiG9w0BAQUFADBVMQswCQYD..."
-    }
+  function(profile, done) {
+    // Find or create your user
+    console.log("all done!!!!!", profile);
+    done(null, profile);
   }
-}, function(profile, done){
+);
 
-  // Find or create your user
-  console.log('all done!!!!!', profile)
-  done(null, profile);
-})
+passport.use(spidStrategy);
 
-passport.use(spidStrategy)
+app.get("/login", passport.authenticate("spid"));
 
-app.get("/login", passport.authenticate('spid'))
-
-app.post("/acs",
-  passport.authenticate('spid', {session: false}),
-  function(req, res){
-    console.log(req.user)
-    res.send(`Hello ${req.user.name_id}`)
-  })
+app.post("/acs", passport.authenticate("spid", { session: false }), function(
+  req,
+  res
+) {
+  console.log(req.user);
+  res.send(`Hello ${req.user.name_id}`);
+});
 
 // Create xml metadata
-app.get("/metadata", spidStrategy.generateServiceProviderMetadata())
-
+app.get("/metadata", spidStrategy.generateServiceProviderMetadata());
 
 app.listen(3000);

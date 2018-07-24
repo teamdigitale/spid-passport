@@ -26,8 +26,11 @@
   "homepage": "https://github.com/HackDevCT/spid-passport#readme",
   "dependencies": {
     "passport": "^0.4.0",
+    "passport-saml": "^0.33.0",
     "passport-strategy": "^1.0.0",
-    "passport-saml": "^0.31.0"
+    "q": "^1.5.1",
+    "xml-crypto": "^0.10.1",
+    "xmlbuilder": "^10.0.0"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
