@@ -74,10 +74,13 @@ SpidStrategy.prototype.authenticate = function(req, options) {
     spidOptions.forceAuthn = authLevel === "SpidL1" ? false : true;
   } else if (decodedResponse) {
     const xmlResponse = new DOMParser().parseFromString(decodedResponse);
-    const responseAuthLevelEl = xmlResponse.getElementsByTagName(
-      "saml:AuthnContextClassRef"
-    );
+
     // <saml2:AuthnContextClassRef>https://www.spid.gov.it/SpidL2</saml2:AuthnContextClassRef>
+    const responseAuthLevelEl = xmlResponse.getElementsByTagNameNS(
+      "urn:oasis:names:tc:SAML:2.0:assertion",
+      "AuthnContextClassRef"
+    );
+
     if (responseAuthLevelEl[0]) {
       spidOptions.authnContext = responseAuthLevelEl[0].textContent.trim();
     }
