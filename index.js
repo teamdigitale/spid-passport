@@ -239,7 +239,8 @@ SpidStrategy.prototype.generateServiceProviderMetadata = function(
         name: "Nome",
         familyName: "Cognome",
         fiscalNumber: "Codice fiscale",
-        email: "Email"
+        email: "Email",
+        mobilePhone: "Numero di telefono"
       };
 
       return friendlyNames[name];
