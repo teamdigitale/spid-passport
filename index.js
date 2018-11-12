@@ -48,7 +48,7 @@ util.inherits(SpidStrategy, passport.Strategy);
 SpidStrategy.prototype.authenticate = function(req, options) {
   const self = this;
 
-  logger.debug("SPID raw response: %s\n\n", req.body);
+  logger.debug("SPID raw response: %s\n\n", JSON.stringify(req.body));
   
   const decodedResponse =
     req.body && req.body.SAMLResponse
