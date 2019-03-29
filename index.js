@@ -49,7 +49,7 @@ SpidStrategy.prototype.authenticate = function(req, options) {
   const self = this;
 
   logger.debug("SPID raw response: %s\n\n", JSON.stringify(req.body));
-  
+
   const decodedResponse =
     req.body && req.body.SAMLResponse
       ? decodeBase64(req.body.SAMLResponse)
@@ -67,7 +67,9 @@ SpidStrategy.prototype.authenticate = function(req, options) {
   } else {
     // Check against all IDP certs if we don't have an entityID
     const idps = this.spidOptions.idp;
-    spidOptions.cert = Object.keys(idps).map(k => idps[k].cert);
+    spidOptions.cert = Object.keys(idps).reduce((certs, k) => {
+      certs.concat(idps[k].cert);
+    }, []);
   }
 
   const authLevel = req.query.authLevel;
