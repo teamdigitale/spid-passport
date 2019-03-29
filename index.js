@@ -67,9 +67,10 @@ SpidStrategy.prototype.authenticate = function(req, options) {
   } else {
     // Check against all IDP certs if we don't have an entityID
     const idps = this.spidOptions.idp;
-    spidOptions.cert = Object.keys(idps).reduce((certs, k) => {
-      certs.concat(idps[k].cert);
-    }, []);
+    spidOptions.cert = Object.keys(idps).reduce(
+      (certs, k) => certs.concat(idps[k].cert),
+      []
+    );
   }
 
   const authLevel = req.query.authLevel;
