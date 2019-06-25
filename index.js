@@ -10,6 +10,9 @@ const DOMParser = require("xmldom").DOMParser;
 const { createLogger, format, transports } = require("winston");
 const { combine, timestamp, label, printf } = format;
 
+const getMethod = "GET";
+const postMethod = "POST";
+
 const logger = createLogger({
   level: process.env.NODE_ENV !== "production" ? "debug" : "info",
   format: combine(
@@ -48,20 +51,40 @@ util.inherits(SpidStrategy, passport.Strategy);
 SpidStrategy.prototype.authenticate = function(req, options) {
   const self = this;
 
-  logger.debug("SPID raw response: %s\n\n", JSON.stringify(req.body));
+  // Since authenticate function handles GET and POST requests we log request body
+  // (it should contain SAMLResponse) for POST requests, for GET cases we log entityID and authLevel
+  if (req.method === postMethod) {
+    logger.debug("SPID raw POST request: %s\n", JSON.stringify(req.body));
+  } else if (req.method === getMethod) {
+    logger.debug(
+      "SPID GET request entityID: %s - authLevel: %s\n",
+      req.query.entityID,
+      req.query.authLevel
+    );
+  } else {
+    logger.debug("SPID request method: %s\n", req.method);
+  }
 
   const decodedResponse =
     req.body && req.body.SAMLResponse
       ? decodeBase64(req.body.SAMLResponse)
       : undefined;
-
-  logger.debug("SPID decoded response: %s\n\n", decodedResponse);
+  if (req.method === postMethod) {
+    logger.debug("SPID decoded POST request: %s\n", decodedResponse);
+  }
 
   const spidOptions = Object.assign({}, this.spidOptions.sp);
 
   const entityID = req.query.entityID;
   if (entityID !== undefined) {
     const idp = this.spidOptions.idp[entityID];
+    // given entityID is not in spidOptions
+    if (idp === undefined) {
+      logger.error(
+        "SPID cannot find a valid idp in spidOptions for given entityID: %s",
+        entityID
+      );
+    }
     spidOptions.entryPoint = idp.entryPoint;
     spidOptions.cert = idp.cert;
   } else {
@@ -76,6 +99,14 @@ SpidStrategy.prototype.authenticate = function(req, options) {
   const authLevel = req.query.authLevel;
   if (authLevel !== undefined) {
     spidOptions.authnContext = getSpidAuthLevel(authLevel);
+    if (spidOptions.authnContext === undefined) {
+      logger.error(
+        "SPID cannot find a valid authnContext for given authLevel: %s",
+        authLevel
+      );
+    } else {
+      logger.debug("SPID Response authnContext: %s", spidOptions.authnContext);
+    }
     spidOptions.forceAuthn = authLevel === "SpidL1" ? false : true;
   } else if (decodedResponse) {
     const xmlResponse = new DOMParser().parseFromString(decodedResponse);
@@ -89,7 +120,7 @@ SpidStrategy.prototype.authenticate = function(req, options) {
     if (responseAuthLevelEl[0]) {
       spidOptions.authnContext = responseAuthLevelEl[0].textContent.trim();
     }
-    logger.debug("Response authnContext: %s", spidOptions.authnContext);
+    logger.debug("SPID Response authnContext: %s", spidOptions.authnContext);
   }
 
   const samlClient = new saml(spidOptions);
@@ -139,8 +170,6 @@ SpidStrategy.prototype.authenticate = function(req, options) {
 
   if (req.body && req.body.SAMLResponse) {
     samlClient.validatePostResponse(req.body, validateCallback);
-  } else if (req.body && req.body.SAMLRequest) {
-    samlClient.validatePostRequest(req.body, validateCallback);
   } else {
     const requestHandler = {
       "login-request": function() {
@@ -152,6 +181,10 @@ SpidStrategy.prototype.authenticate = function(req, options) {
     }[options.samlFallback];
 
     if (typeof requestHandler !== "function") {
+      logger.debug(
+        "SPID requestHandler is not a function: %s",
+        typeof requestHandler
+      );
       return self.fail();
     }
 
