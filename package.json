@@ -1,6 +1,6 @@
 {
   "name": "spid-passport",
-  "version": "1.1.1",
+  "version": "1.1.2",
   "description": "Passport strategy per spid (Sistema Pubblico per la gestione dell'Identità Digitale) ",
   "main": "index.js",
   "scripts": {
