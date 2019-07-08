@@ -239,6 +239,7 @@ SpidStrategy.prototype.generateServiceProviderMetadata = function(
     decryptionCert = decryptionCert.replace(/\r\n/g, "\n");
 
     metadata.EntityDescriptor.SPSSODescriptor.KeyDescriptor = {
+      "@use": "signing",
       "ds:KeyInfo": {
         "ds:X509Data": {
           "ds:X509Certificate": {
@@ -305,9 +306,18 @@ SpidStrategy.prototype.generateServiceProviderMetadata = function(
 
   if (spidOptions.organization) {
     metadata.EntityDescriptor.Organization = {
-      OrganizationName: spidOptions.organization.name,
-      OrganizationDisplayName: spidOptions.organization.displayName,
-      OrganizationURL: spidOptions.organization.URL
+      OrganizationName: {
+        "@xml:lang": "it",
+        "#text": spidOptions.organization.name
+      },
+      OrganizationDisplayName: {
+        "@xml:lang": "it",
+        "#text": spidOptions.organization.displayName
+      },
+      OrganizationURL: {
+        "@xml:lang": "it",
+        "#text": spidOptions.organization.URL
+      }
     };
   }
 
