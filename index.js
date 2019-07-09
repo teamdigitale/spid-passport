@@ -170,6 +170,8 @@ SpidStrategy.prototype.authenticate = function(req, options) {
 
   if (req.body && req.body.SAMLResponse) {
     samlClient.validatePostResponse(req.body, validateCallback);
+  } else if (req.body && req.body.SAMLRequest) {
+    samlClient.validatePostRequest(req.body, validateCallback);
   } else {
     const requestHandler = {
       "login-request": function() {
