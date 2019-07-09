@@ -119,6 +119,7 @@ SpidStrategy.prototype.authenticate = function(req, options) {
 
     if (responseAuthLevelEl[0]) {
       spidOptions.authnContext = responseAuthLevelEl[0].textContent.trim();
+      // check if the parsed value is a valid Spid AuthLevel Url
       if (getSpidAuthLevel(spidOptions.authnContext) !== undefined) {
         logger.debug(
           "SPID Response authnContext: %s",
