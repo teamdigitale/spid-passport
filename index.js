@@ -460,6 +460,9 @@ const generateAuthorizeRequest = function(req, samlClient, callback) {
     .done();
 };
 
+/**
+ * from a given authLevel it returns the Spid auth level url
+ */
 const getSpidAuthLevelUrl = function(authLevel) {
   switch (authLevel) {
     case "SpidL1":
@@ -471,6 +474,9 @@ const getSpidAuthLevelUrl = function(authLevel) {
   }
 };
 
+/**
+ * from a given authLevelUrl it returns the Spid Auth Level
+ */
 const getSpidAuthLevel = function(authLevelUrl) {
   switch (authLevelUrl) {
     case "https://www.spid.gov.it/SpidL1":
