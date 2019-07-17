@@ -291,7 +291,7 @@ SpidStrategy.prototype.generateServiceProviderMetadata = function(
       return {
         "@Name": item,
         "@NameFormat":
-          "urn:oasis:names:tc:SAML:2.0:attrname-format:unspecified",
+          "urn:oasis:names:tc:SAML:2.0:attrname-format:basic",
         "@FriendlyName": getFriendlyName(item)
       };
     });
@@ -421,8 +421,7 @@ const generateAuthorizeRequest = function(req, samlClient, callback) {
       if (samlClient.options.identifierFormat) {
         request["samlp:AuthnRequest"]["samlp:NameIDPolicy"] = {
           "@xmlns:samlp": "urn:oasis:names:tc:SAML:2.0:protocol",
-          "@Format": samlClient.options.identifierFormat,
-          "@AllowCreate": "true"
+          "@Format": samlClient.options.identifierFormat
         };
       }
 
