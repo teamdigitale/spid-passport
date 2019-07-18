@@ -364,7 +364,7 @@ SpidStrategy.prototype.generateServiceProviderMetadata = function(
   );
   sig.signatureAlgorithm = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
   sig.computeSignature(xml,{
-    location: { reference: "", action: "prepend" } //This will place the signature before the SPSSODescriptor tag
+    location: { reference: "", action: "prepend" } // Place the signature tag before all other tags
   });
 
   return sig.getSignedXml();
