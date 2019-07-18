@@ -98,7 +98,7 @@ SpidStrategy.prototype.authenticate = function(req, options) {
 
   const authLevel = req.query.authLevel;
   if (authLevel !== undefined) {
-    spidOptions.authnContext = getSpidAuthLevel(authLevel);
+    spidOptions.authnContext = getSpidAuthLevelUrl(authLevel);
     if (spidOptions.authnContext === undefined) {
       logger.error(
         "SPID cannot find a valid authnContext for given authLevel: %s",
@@ -119,8 +119,24 @@ SpidStrategy.prototype.authenticate = function(req, options) {
 
     if (responseAuthLevelEl[0]) {
       spidOptions.authnContext = responseAuthLevelEl[0].textContent.trim();
+      // check if the parsed value is a valid Spid AuthLevel Url
+      if (getSpidAuthLevel(spidOptions.authnContext) !== undefined) {
+        logger.debug(
+          "SPID Response authnContext: %s",
+          spidOptions.authnContext
+        );
+      } else {
+        logger.error(
+          "SPID Response authnContext has a wrong value: %s",
+          spidOptions.authnContext
+        );
+      }
+    } else {
+      logger.error(
+        "SPID cannot find assertion namespace in xmlResponse %s",
+        decodedResponse
+      );
     }
-    logger.debug("SPID Response authnContext: %s", spidOptions.authnContext);
   }
 
   const samlClient = new saml(spidOptions);
@@ -456,17 +472,31 @@ const generateAuthorizeRequest = function(req, samlClient, callback) {
     .done();
 };
 
-const getSpidAuthLevel = function(authLevel) {
+/**
+ * from a given authLevel it returns the Spid auth level url
+ */
+const getSpidAuthLevelUrl = function(authLevel) {
   switch (authLevel) {
     case "SpidL1":
       return "https://www.spid.gov.it/SpidL1";
-      break;
     case "SpidL2":
       return "https://www.spid.gov.it/SpidL2";
-      break;
     case "SpidL3":
       return "https://www.spid.gov.it/SpidL3";
-      break;
+  }
+};
+
+/**
+ * from a given authLevelUrl it returns the Spid Auth Level
+ */
+const getSpidAuthLevel = function(authLevelUrl) {
+  switch (authLevelUrl) {
+    case "https://www.spid.gov.it/SpidL1":
+      return "SpidL1";
+    case "https://www.spid.gov.it/SpidL2":
+      return "SpidL2";
+    case "https://www.spid.gov.it/SpidL3":
+      return "SpidL3";
   }
 };
 
